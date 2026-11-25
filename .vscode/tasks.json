@@ -1,0 +1,31 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Test auth login",
+			"type": "shell",
+			"command": "npx",
+			"args": [
+				"vitest",
+				"run",
+				"src/routes/auth.routes.integration.test.ts",
+				"-t",
+				"POST /api/auth/login should authenticate an existing user"
+			],
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "Test auth login from backend",
+			"type": "shell",
+			"command": "cmd.exe",
+			"args": [
+				"/d",
+				"/c",
+				"cd /d c:\\Users\\Daniels\\OneDrive\\Desktop\\Consult\\backend && npx vitest run src/routes/auth.routes.integration.test.ts -t \"POST /api/auth/login should authenticate an existing user\""
+			],
+			"problemMatcher": [],
+			"group": "test"
+		}
+	]
+}

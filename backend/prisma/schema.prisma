@@ -1,0 +1,251 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                String            @id @default(uuid())
+  sessionId         String            @unique
+  email             String?           @unique
+  name              String?
+  passwordHash      String?
+  isGuest           Boolean           @default(true)
+  level             String?
+  theme             String?           @default("dark")
+  language          String?           @default("en")
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime?
+  conversations     Conversation[]
+  favorites         Favorite[]
+  feedBacks         FeedBack[]
+  knownTechnologies KnownTechnology[]
+  refreshTokens     RefreshToken[]
+
+  @@index([sessionId])
+  @@map("user")
+}
+
+model KnownTechnology {
+  id         Int      @id @default(autoincrement())
+  userId     String
+  bricId     Int
+  addingDate DateTime @default(now())
+  bric       Bric     @relation(fields: [bricId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, bricId])
+}
+
+model RefreshToken {
+  id             String   @id @default(uuid())
+  userId         String
+  tokenHash      String   @unique
+  userAgent      String?
+  expirationDate DateTime
+  createdAt      DateTime @default(now())
+  revoked        Boolean  @default(false)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Conversation {
+  id                   Int                  @id @default(autoincrement())
+  userId               String
+  title                String?
+  status               String               @default("pending")
+  description          String
+  sector               String
+  projectSize          String?
+  extractedNeeds       Json?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime?
+  choosenStack         ChoosenStack[]
+  user                 User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  livrables            Livrable[]
+  messages             Message[]
+  proposedStack        ProposedStack[]
+  specificsConstraints SpecificConstraint[]
+  analysis Analysis[]
+
+  @@index([userId])
+}
+
+model SpecificConstraint {
+  id             Int          @id @default(autoincrement())
+  conversationId Int
+  constraint     String?
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+}
+
+model Message {
+  id              Int             @id @default(autoincrement())
+  conversationId  Int
+  content         String
+  createdAt       DateTime        @default(now())
+  conversation    Conversation    @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  resultingStacks ProposedStack[]
+  analysis Analysis[]
+
+  @@index([conversationId])
+}
+
+model Bric {
+  id                  Int                 @id @default(autoincrement())
+  name                String              @unique
+  category            String
+  useCase             String
+  requiredLevel       String
+  technicalDeptRisk   String
+  maintenanceScore    Int
+  performanceScore    Int
+  popularityScore     Int
+  maintenaceActivity  Int
+  communitySize       Int
+  lastUpdate          DateTime?
+  infrastructurePrice String
+  licence             String
+  ressources          Json?
+  badFor              BadFor[]
+  compatibilityA      Compatibility[]     @relation("bricA")
+  compatibilityB      Compatibility[]     @relation("bricB")
+  compatibleProjects  CompatibleProject[]
+  favorites           Favorite[]
+  goodFor             GoodFor[]
+  knownTechnologies   KnownTechnology[]
+  stackBric           StackBric[]
+  bric_description String
+
+  @@index([category])
+}
+
+model CompatibleProject {
+  id          Int    @id @default(autoincrement())
+  bricId      Int
+  projectType String
+  bric        Bric   @relation(fields: [bricId], references: [id], onDelete: Cascade)
+
+  @@index([bricId])
+}
+
+model GoodFor {
+  id          Int    @id @default(autoincrement())
+  bricId      Int
+  projectType String
+  bric        Bric   @relation(fields: [bricId], references: [id], onDelete: Cascade)
+  advantages String
+  why_good_for String
+
+  @@index([bricId])
+}
+
+model BadFor {
+  id          Int    @id @default(autoincrement())
+  bricId      Int
+  projectType String
+  bric        Bric   @relation(fields: [bricId], references: [id], onDelete: Cascade)
+  discards String
+  why_bad_for String
+
+  @@index([bricId])
+}
+
+model Compatibility {
+  id           Int    @id @default(autoincrement())
+  bricAId      Int
+  bricBId      Int
+  typeRelation String
+  bricA        Bric   @relation("bricA", fields: [bricAId], references: [id], onDelete: Cascade)
+  bricB        Bric   @relation("bricB", fields: [bricBId], references: [id], onDelete: Cascade)
+
+  @@unique([bricAId, bricBId])
+}
+
+model ProposedStack {
+  id              Int            @id @default(autoincrement())
+  conversationId  Int
+  firingMessageId Int
+  FinalScore      Float
+  version         Int            @default(1)
+  position        Int
+  createdAt       DateTime       @default(now())
+  choosedStack    ChoosenStack[]
+  favorites       Favorite[]
+  conversation    Conversation   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  firingMessage   Message        @relation(fields: [firingMessageId], references: [id], onDelete: Cascade)
+  brics           StackBric[]
+
+  @@index([conversationId, version])
+}
+
+model StackBric {
+  id      Int           @id @default(autoincrement())
+  bricId  Int
+  stackId Int
+  bric    Bric          @relation(fields: [bricId], references: [id], onDelete: Cascade)
+  stack   ProposedStack @relation(fields: [stackId], references: [id], onDelete: Cascade)
+
+  @@unique([stackId, bricId])
+}
+
+model ChoosenStack {
+  id             Int           @id @default(autoincrement())
+  conversationId Int
+  stackId        Int
+  choiceDate     DateTime      @default(now())
+  conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  stack          ProposedStack @relation(fields: [stackId], references: [id], onDelete: Cascade)
+}
+
+model Livrable {
+  id             Int          @id @default(autoincrement())
+  conversationId Int
+  type           String
+  content        String
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+}
+
+model Favorite {
+  id        Int            @id @default(autoincrement())
+  userId    String
+  bricId    Int?
+  stackId   Int?
+  createdAt DateTime       @default(now())
+  bric      Bric?          @relation(fields: [bricId], references: [id], onDelete: Cascade)
+  stack     ProposedStack? @relation(fields: [stackId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model FeedBack {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  note      Int
+  Message   String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Analysis {
+  id String @id @default(uuid())
+  messageId Int?
+  message Message? @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  conversationId Int? 
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  status String @default("Pending") 
+  error String?
+  input Json
+  createdAt DateTime @default(now())
+}

@@ -1,0 +1,11 @@
+node_modules
+# Keep environment variables out of version control
+.env
+seed.sh
+seed.language.sh
+/generated/prisma
+node_modules/
+.agents/skills/prisma-composer-core-concepts/SKILL.md
+backend/.claude/skills/prisma-composer-core-concepts/SKILL.md
+backend/.cursor/skills/prisma-composer-core-concepts/SKILL.md
+backend/.devin/skills/prisma-composer-core-concepts/SKILL.md
